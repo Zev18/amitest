@@ -1,10 +1,23 @@
-import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router"
+import {
+  HeadContent,
+  Scripts,
+  createRootRoute,
+  createRootRouteWithContext,
+} from "@tanstack/react-router"
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 
 import appCss from "../styles.css?url"
+import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
+import { Header } from "@/components/header"
+import { getSession } from "@/lib/auth.functions"
 
-export const Route = createRootRoute({
+interface RouterContext {
+  session: Awaited<ReturnType<typeof getSession>>
+}
+
+export const Route = createRootRouteWithContext()({
   head: () => ({
     meta: [
       {
@@ -25,6 +38,10 @@ export const Route = createRootRoute({
       },
     ],
   }),
+  beforeLoad: async () => {
+    const session = await getSession()
+    return { session }
+  },
   notFoundComponent: () => (
     <main className="container mx-auto p-4 pt-16">
       <h1>404</h1>
@@ -36,24 +53,28 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
       <body>
-        {children}
-        <TanStackDevtools
-          config={{
-            position: "bottom-right",
-          }}
-          plugins={[
-            {
-              name: "Tanstack Router",
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-          ]}
-        />
-        <Scripts />
+        <ThemeProvider defaultTheme="system" storageKey="theme">
+          <Header />
+          {children}
+          <TanStackDevtools
+            config={{
+              position: "bottom-right",
+            }}
+            plugins={[
+              {
+                name: "Tanstack Router",
+                render: <TanStackRouterDevtoolsPanel />,
+              },
+            ]}
+          />
+          <Toaster />
+          <Scripts />
+        </ThemeProvider>
       </body>
     </html>
   )
